@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import io from "socket.io-client";
 import { CommonInput } from "./components/CommonInput";
 import { ChatList } from "./components/ChatList";
@@ -14,23 +14,23 @@ function App() {
   const [login, setLogin] = useState(false);
   const [privateChatActive, setPrivateChatActive] = useState(false);
 
-  useEffect(() => {
-    socket.on("message", handleMessageReceived);
-    socket.on("userJoined", handleUserJoined);
-    socket.on("userLeft", handleUserLeft);
-    return () => {
-      socket.off("message", handleMessageReceived);
-      socket.off("userJoined", handleUserJoined);
-      socket.off("userLeft", handleUserLeft);
-    };
-  }, []);
-
-  const handleMessageReceived = (message) => {
+  const handleMessageReceived = useCallback((message) => {
     setChat((prevChat) => [...prevChat, message]);
     if (!document.hasFocus()) {
       showNotification(message);
     }
-  };
+  }, []);
+  
+  useEffect(() => {
+    socket.on("userJoined", handleUserJoined);
+    socket.on("message", handleMessageReceived);
+    socket.on("userLeft", handleUserLeft);
+    return () => {
+      socket.off("userJoined", handleUserJoined);
+      socket.off("message", handleMessageReceived);
+      socket.off("userLeft", handleUserLeft);
+    };
+  }, [handleMessageReceived]);
 
   const handleUserJoined = (users) => {
     setOnlineUsers(users);
